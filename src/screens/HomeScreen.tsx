@@ -30,7 +30,8 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     try {
       const game = await getGame(gameIdToJoin.toUpperCase());
       if (game) {
-        navigation.navigate('ModeSelect', { gameId: gameIdToJoin.toUpperCase() });
+        // Joiners go directly to Board view (they're players, not spymaster)
+        navigation.navigate('Board', { gameId: gameIdToJoin.toUpperCase() });
       } else {
         alert('Game not found.');
       }

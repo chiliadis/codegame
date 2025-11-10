@@ -15,7 +15,8 @@ export default function WaitingRoomScreen({ route, navigation }: WaitingRoomScre
   const gameUrl = `https://codegame-8730b.web.app?join=${gameId}`;
 
   const handleContinue = () => {
-    navigation.navigate('ModeSelect', { gameId });
+    // Creator is always the spymaster
+    navigation.navigate('Spymaster', { gameId });
   };
 
   const handleShare = async () => {
