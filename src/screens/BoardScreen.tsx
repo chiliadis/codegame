@@ -72,53 +72,54 @@ export default function BoardScreen({ route, navigation }: BoardScreenProps) {
 
   return (
     <View style={styles.container}>
+      {/* Compact Header */}
       <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.changeModeButton}
-          onPress={() => navigation.navigate('ModeSelect', { gameId })}
-        >
-          <Text style={styles.changeModeText}>Change Mode</Text>
-        </TouchableOpacity>
-
-        <Text style={styles.gameId}>Game: {gameId}</Text>
-
-        <View style={styles.scoreContainer}>
-          <View style={[styles.scoreBox, { backgroundColor: '#E53935' }]}>
-            <Text style={styles.scoreText}>Red: {game.redRemaining}</Text>
-          </View>
-          <View style={[styles.scoreBox, { backgroundColor: '#1E88E5' }]}>
-            <Text style={styles.scoreText}>Blue: {game.blueRemaining}</Text>
-          </View>
+        <View style={styles.topBar}>
+          <Text style={styles.gameId}>{gameId}</Text>
+          <TouchableOpacity
+            style={styles.changeModeButton}
+            onPress={() => navigation.navigate('ModeSelect', { gameId })}
+          >
+            <Text style={styles.changeModeText}>⚙️</Text>
+          </TouchableOpacity>
         </View>
 
-        {game.winner ? (
-          <Text style={styles.winnerText}>
-            {game.winner.toUpperCase()} TEAM WINS!
-          </Text>
-        ) : (
-          <View style={styles.turnContainer}>
-            <Text style={styles.turnLabel}>Current Turn:</Text>
-            <View
-              style={[
-                styles.turnIndicator,
-                { backgroundColor: game.currentTeam === 'red' ? '#E53935' : '#1E88E5' },
-              ]}
-            >
-              <Text style={styles.turnText}>{game.currentTeam.toUpperCase()}</Text>
+        <View style={styles.statusBar}>
+          {/* Score */}
+          <View style={styles.scoreContainer}>
+            <View style={[styles.scoreBox, styles.redBox]}>
+              <Text style={styles.scoreText}>{game.redRemaining}</Text>
+              <Text style={styles.scoreLabel}>RED</Text>
+            </View>
+            <View style={[styles.scoreBox, styles.blueBox]}>
+              <Text style={styles.scoreText}>{game.blueRemaining}</Text>
+              <Text style={styles.scoreLabel}>BLUE</Text>
             </View>
           </View>
-        )}
 
-        {game.currentClue && (
-          <View style={styles.clueContainer}>
-            <Text style={styles.clueLabel}>Current Clue:</Text>
-            <Text style={styles.clueText}>
-              {game.currentClue.word.toUpperCase()} - {game.currentClue.number}
-            </Text>
-          </View>
-        )}
+          {/* Turn or Winner */}
+          {game.winner ? (
+            <View style={[styles.winnerBadge, { backgroundColor: game.winner === 'red' ? '#E53935' : '#1E88E5' }]}>
+              <Text style={styles.winnerText}>🏆 {game.winner.toUpperCase()} WINS!</Text>
+            </View>
+          ) : (
+            <View style={[styles.turnBadge, { backgroundColor: game.currentTeam === 'red' ? '#E53935' : '#1E88E5' }]}>
+              <Text style={styles.turnText}>{game.currentTeam.toUpperCase()}'S TURN</Text>
+            </View>
+          )}
+
+          {/* Clue */}
+          {game.currentClue && (
+            <View style={styles.clueBox}>
+              <Text style={styles.clueText}>
+                "{game.currentClue.word.toUpperCase()}" - {game.currentClue.number}
+              </Text>
+            </View>
+          )}
+        </View>
       </View>
 
+      {/* Board */}
       <View style={styles.boardContainer}>
         <View style={[styles.board, { width: availableWidth }]}>
           {game.cards.map((card, index) => (
@@ -151,11 +152,11 @@ export default function BoardScreen({ route, navigation }: BoardScreenProps) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1a1a1a',
+    backgroundColor: '#0d1117',
   },
   loadingContainer: {
     flex: 1,
-    backgroundColor: '#1a1a1a',
+    backgroundColor: '#0d1117',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -164,94 +165,108 @@ const styles = StyleSheet.create({
     fontSize: 18,
   },
   header: {
-    padding: 20,
+    backgroundColor: '#161b22',
+    paddingHorizontal: 20,
     paddingTop: 50,
+    paddingBottom: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#21262d',
   },
-  changeModeButton: {
-    position: 'absolute',
-    top: 10,
-    right: 20,
-    backgroundColor: '#444',
-    paddingVertical: 8,
-    paddingHorizontal: 15,
-    borderRadius: 8,
-    zIndex: 10,
-  },
-  changeModeText: {
-    color: '#fff',
-    fontSize: 14,
+  topBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
   },
   gameId: {
-    fontSize: 20,
-    color: '#888',
-    textAlign: 'center',
-    marginBottom: 15,
-    fontWeight: 'bold',
-    letterSpacing: 3,
+    fontSize: 16,
+    color: '#8b949e',
+    fontWeight: '600',
+    letterSpacing: 4,
+  },
+  changeModeButton: {
+    backgroundColor: '#21262d',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+  },
+  changeModeText: {
+    fontSize: 18,
+  },
+  statusBar: {
+    gap: 10,
   },
   scoreContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: 20,
-    marginBottom: 15,
+    gap: 12,
   },
   scoreBox: {
-    paddingVertical: 10,
-    paddingHorizontal: 25,
+    minWidth: 80,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
     borderRadius: 8,
+    alignItems: 'center',
+  },
+  redBox: {
+    backgroundColor: '#da3633',
+  },
+  blueBox: {
+    backgroundColor: '#1f6feb',
   },
   scoreText: {
     color: '#fff',
-    fontSize: 18,
+    fontSize: 24,
     fontWeight: 'bold',
   },
-  turnContainer: {
-    alignItems: 'center',
-    marginBottom: 10,
+  scoreLabel: {
+    color: 'rgba(255,255,255,0.8)',
+    fontSize: 11,
+    fontWeight: '600',
+    marginTop: 2,
   },
-  turnLabel: {
-    fontSize: 14,
-    color: '#aaa',
-    marginBottom: 5,
-  },
-  turnIndicator: {
+  turnBadge: {
     paddingVertical: 8,
-    paddingHorizontal: 30,
+    paddingHorizontal: 20,
     borderRadius: 20,
+    alignSelf: 'center',
   },
   turnText: {
     color: '#fff',
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: 'bold',
+  },
+  winnerBadge: {
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    alignSelf: 'center',
   },
   winnerText: {
-    fontSize: 28,
+    fontSize: 20,
     fontWeight: 'bold',
-    color: '#4CAF50',
-    textAlign: 'center',
+    color: '#fff',
   },
-  clueContainer: {
-    alignItems: 'center',
-    marginTop: 15,
-    padding: 15,
-    backgroundColor: '#2a2a2a',
+  clueBox: {
+    backgroundColor: '#21262d',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
     borderRadius: 8,
-  },
-  clueLabel: {
-    fontSize: 12,
-    color: '#aaa',
-    marginBottom: 5,
+    borderLeftWidth: 3,
+    borderLeftColor: '#58a6ff',
+    alignSelf: 'center',
   },
   clueText: {
-    fontSize: 24,
-    color: '#fff',
-    fontWeight: 'bold',
+    fontSize: 18,
+    color: '#58a6ff',
+    fontWeight: '600',
   },
   boardContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 15,
   },
   board: {
     flexDirection: 'row',
@@ -260,27 +275,32 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   card: {
-    borderRadius: 12,
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 12,
-    borderWidth: 3,
-    borderColor: '#333',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
   },
   cardUnrevealed: {
-    backgroundColor: '#F5DEB3',
+    backgroundColor: '#f0e68c',
+    borderWidth: 2,
+    borderColor: '#daa520',
   },
   cardRed: {
-    backgroundColor: '#E53935',
+    backgroundColor: '#da3633',
   },
   cardBlue: {
-    backgroundColor: '#1E88E5',
+    backgroundColor: '#1f6feb',
   },
   cardNeutral: {
-    backgroundColor: '#BDBDBD',
+    backgroundColor: '#8b949e',
   },
   cardAssassin: {
-    backgroundColor: '#212121',
+    backgroundColor: '#161b22',
   },
   cardWord: {
     fontWeight: 'bold',
@@ -293,10 +313,10 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 12,
+    borderRadius: 10,
   },
   overlayIcon: {
     textAlign: 'center',
