@@ -6,6 +6,7 @@ import { RootStackParamList } from '../navigation/types';
 import { subscribeToGame, updateGame } from '../services/gameService';
 import { Game, Card } from '../types/game';
 import { revealCard } from '../utils/gameLogic';
+import SpyIcon from '../components/SpyIcon';
 
 type BoardScreenProps = {
   route: RouteProp<RootStackParamList, 'Board'>;
@@ -135,12 +136,7 @@ export default function BoardScreen({ route, navigation }: BoardScreenProps) {
 
               {card.revealed && (
                 <View style={styles.overlay}>
-                  <Text style={[styles.overlayIcon, { fontSize: cardSize * 0.5 }]}>
-                    {card.type === 'red' ? '🔴' :
-                     card.type === 'blue' ? '🔵' :
-                     card.type === 'assassin' ? '💣' :
-                     '⚪'}
-                  </Text>
+                  <SpyIcon type={card.type} size={cardSize * 0.7} />
                 </View>
               )}
             </View>

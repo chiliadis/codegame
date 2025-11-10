@@ -6,6 +6,7 @@ import { RootStackParamList } from '../navigation/types';
 import { subscribeToGame, updateGame } from '../services/gameService';
 import { Game, Card } from '../types/game';
 import { endTurn, revealCard } from '../utils/gameLogic';
+import SpyIcon from '../components/SpyIcon';
 
 type SpymasterScreenProps = {
   route: RouteProp<RootStackParamList, 'Spymaster'>;
@@ -173,12 +174,7 @@ export default function SpymasterScreen({ route, navigation }: SpymasterScreenPr
 
               {card.revealed && (
                 <View style={styles.overlay}>
-                  <Text style={[styles.overlayIcon, { fontSize: cardSize * 0.5 }]}>
-                    {card.type === 'red' ? '🔴' :
-                     card.type === 'blue' ? '🔵' :
-                     card.type === 'assassin' ? '💣' :
-                     '⚪'}
-                  </Text>
+                  <SpyIcon type={card.type} size={cardSize * 0.7} />
                 </View>
               )}
             </TouchableOpacity>
