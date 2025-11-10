@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Platform } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
 import { generateGameId, createNewGame } from '../utils/gameLogic';
@@ -13,6 +13,34 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
   const [gameId, setGameId] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // Handle deep links / URL parameters for joining games
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      const params = new URLSearchParams(window.location.search);
+      const joinGameId = params.get('join');
+      if (joinGameId) {
+        // Auto-join game from URL
+        handleAutoJoin(joinGameId);
+      }
+    }
+  }, []);
+
+  const handleAutoJoin = async (gameIdToJoin: string) => {
+    setLoading(true);
+    try {
+      const game = await getGame(gameIdToJoin.toUpperCase());
+      if (game) {
+        navigation.navigate('ModeSelect', { gameId: gameIdToJoin.toUpperCase() });
+      } else {
+        alert('Game not found.');
+      }
+    } catch (error) {
+      console.error('Error auto-joining game:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleCreateGame = async () => {
     setLoading(true);
     try {
@@ -22,8 +50,8 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
       await createGame(game);
       console.log('Game created successfully!');
 
-      // Creator is always the spymaster
-      navigation.navigate('Spymaster', { gameId: newGameId });
+      // Go to waiting room to show QR code
+      navigation.navigate('WaitingRoom', { gameId: newGameId });
     } catch (error) {
       console.error('Error creating game:', error);
       alert('Failed to create game. Check Firebase configuration and console for errors.');
@@ -78,11 +106,25 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
 
       <View style={styles.section}>
         <Text style={styles.label}>Join Existing Game</Text>
+
+        <TouchableOpacity
+          style={[styles.button, styles.scanButton]}
+          onPress={() => navigation.navigate('QRScanner')}
+          disabled={loading}
+        >
+          <Text style={styles.buttonText}>📷 Scan QR Code</Text>
+        </TouchableOpacity>
+
+        <View style={styles.orDivider}>
+          <Text style={styles.orText}>or enter code</Text>
+        </View>
+
         <TextInput
           style={styles.input}
           value={gameId}
           onChangeText={setGameId}
           placeholder="Enter Game ID"
+          placeholderTextColor="#666"
           autoCapitalize="characters"
           maxLength={6}
         />
@@ -141,6 +183,10 @@ const styles = StyleSheet.create({
   createButton: {
     backgroundColor: '#4CAF50',
   },
+  scanButton: {
+    backgroundColor: '#9C27B0',
+    marginBottom: 15,
+  },
   joinButton: {
     backgroundColor: '#2196F3',
   },
@@ -148,6 +194,14 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 18,
     fontWeight: 'bold',
+  },
+  orDivider: {
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  orText: {
+    color: '#666',
+    fontSize: 14,
   },
   divider: {
     flexDirection: 'row',

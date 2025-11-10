@@ -3,6 +3,8 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { RootStackParamList } from './src/navigation/types';
 import HomeScreen from './src/screens/HomeScreen';
+import WaitingRoomScreen from './src/screens/WaitingRoomScreen';
+import QRScannerScreen from './src/screens/QRScannerScreen';
 import ModeSelectScreen from './src/screens/ModeSelectScreen';
 import SpymasterScreen from './src/screens/SpymasterScreen';
 import BoardScreen from './src/screens/BoardScreen';
@@ -27,6 +29,16 @@ export default function App() {
           name="Home"
           component={HomeScreen}
           options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="WaitingRoom"
+          component={WaitingRoomScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="QRScanner"
+          component={QRScannerScreen}
+          options={{ title: 'Scan QR Code' }}
         />
         <Stack.Screen
           name="ModeSelect"
