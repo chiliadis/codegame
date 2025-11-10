@@ -7,6 +7,7 @@ import { subscribeToGame, updateGame } from '../services/gameService';
 import { Game, Card } from '../types/game';
 import { endTurn, revealCard, shuffleGame, resetGame } from '../utils/gameLogic';
 import SpyIcon from '../components/SpyIcon';
+import { playCardSound, playEndTurnSound } from '../utils/soundEffects';
 
 type SpymasterScreenProps = {
   route: RouteProp<RootStackParamList, 'Spymaster'>;
@@ -30,6 +31,8 @@ export default function SpymasterScreen({ route, navigation }: SpymasterScreenPr
   const handleEndTurn = async () => {
     if (!game) return;
     try {
+      playEndTurnSound();
+
       const updatedGame = endTurn(game);
       const updates: any = {
         currentTeam: updatedGame.currentTeam,
@@ -56,6 +59,9 @@ export default function SpymasterScreen({ route, navigation }: SpymasterScreenPr
     if (card.revealed) return;
 
     try {
+      // Play sound effect for the card type
+      playCardSound(card.type);
+
       console.log('Revealing card:', index, card.word, card.type);
       const updatedGame = revealCard(game, index);
       console.log('Updated game state:', {
