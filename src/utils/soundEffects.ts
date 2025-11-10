@@ -1,13 +1,5 @@
-import { Audio } from 'expo-av';
 import { Platform } from 'react-native';
 import { CardType } from '../types/game';
-
-// Initialize audio mode
-Audio.setAudioModeAsync({
-  playsInSilentModeIOS: true,
-  staysActiveInBackground: false,
-  shouldDuckAndroid: true,
-});
 
 // Greek TV inspired sound effects using Web Audio API for instant playback
 // These create funny beeps and tones reminiscent of Greek TV game shows
@@ -20,7 +12,16 @@ export async function playCardSound(cardType: CardType) {
 
 function playWebSound(cardType: CardType) {
   try {
+    console.log('Playing sound for card type:', cardType);
     const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    console.log('AudioContext state:', audioContext.state);
+
+    // Resume audio context (required by browser autoplay policies)
+    if (audioContext.state === 'suspended') {
+      console.log('Resuming audio context...');
+      audioContext.resume();
+    }
+
     const oscillator = audioContext.createOscillator();
     const gainNode = audioContext.createGain();
 
@@ -97,6 +98,12 @@ export function playEndTurnSound() {
   if (Platform.OS === 'web') {
     try {
       const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+
+      // Resume audio context (required by browser autoplay policies)
+      if (audioContext.state === 'suspended') {
+        audioContext.resume();
+      }
+
       const oscillator = audioContext.createOscillator();
       const gainNode = audioContext.createGain();
 
