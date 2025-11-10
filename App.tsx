@@ -1,20 +1,49 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import React from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { RootStackParamList } from './src/navigation/types';
+import HomeScreen from './src/screens/HomeScreen';
+import ModeSelectScreen from './src/screens/ModeSelectScreen';
+import SpymasterScreen from './src/screens/SpymasterScreen';
+import BoardScreen from './src/screens/BoardScreen';
+
+const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function App() {
   return (
-    <View style={styles.container}>
-      <Text>Open up App.tsx to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
+    <NavigationContainer>
+      <Stack.Navigator
+        screenOptions={{
+          headerStyle: {
+            backgroundColor: '#1a1a1a',
+          },
+          headerTintColor: '#fff',
+          headerTitleStyle: {
+            fontWeight: 'bold',
+          },
+        }}
+      >
+        <Stack.Screen
+          name="Home"
+          component={HomeScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="ModeSelect"
+          component={ModeSelectScreen}
+          options={{ title: 'Select Mode' }}
+        />
+        <Stack.Screen
+          name="Spymaster"
+          component={SpymasterScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="Board"
+          component={BoardScreen}
+          options={{ headerShown: false }}
+        />
+      </Stack.Navigator>
+    </NavigationContainer>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
