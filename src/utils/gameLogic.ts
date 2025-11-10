@@ -108,3 +108,44 @@ export function endTurn(game: Game): Game {
     currentClue: undefined,
   };
 }
+
+export function shuffleGame(game: Game): Game {
+  // Keep the same words but reassign card types
+  const words = game.cards.map(card => card.word);
+
+  // Determine starting team (random)
+  const startingTeam: TeamColor = Math.random() > 0.5 ? 'red' : 'blue';
+
+  // Create card types array: 9 for starting team, 8 for other team, 7 neutral, 1 assassin
+  const cardTypes: CardType[] = [
+    ...Array(startingTeam === 'red' ? 9 : 8).fill('red'),
+    ...Array(startingTeam === 'blue' ? 9 : 8).fill('blue'),
+    ...Array(7).fill('neutral'),
+    'assassin',
+  ];
+
+  // Shuffle card types
+  const shuffledTypes = cardTypes.sort(() => Math.random() - 0.5);
+
+  // Create new cards with same words but new assignments
+  const cards: Card[] = words.map((word, index) => ({
+    word,
+    type: shuffledTypes[index],
+    revealed: false,
+  }));
+
+  return {
+    ...game,
+    cards,
+    currentTeam: startingTeam,
+    redRemaining: startingTeam === 'red' ? 9 : 8,
+    blueRemaining: startingTeam === 'blue' ? 9 : 8,
+    winner: undefined,
+    currentClue: undefined,
+  };
+}
+
+export function resetGame(game: Game): Game {
+  // Create completely new game with new words
+  return createNewGame(game.id);
+}

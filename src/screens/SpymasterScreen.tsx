@@ -5,7 +5,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
 import { subscribeToGame, updateGame } from '../services/gameService';
 import { Game, Card } from '../types/game';
-import { endTurn, revealCard } from '../utils/gameLogic';
+import { endTurn, revealCard, shuffleGame, resetGame } from '../utils/gameLogic';
 import SpyIcon from '../components/SpyIcon';
 
 type SpymasterScreenProps = {
@@ -84,6 +84,42 @@ export default function SpymasterScreen({ route, navigation }: SpymasterScreenPr
     }
   };
 
+  const handleShuffle = async () => {
+    if (!game) return;
+    try {
+      const shuffledGame = shuffleGame(game);
+      await updateGame(gameId, {
+        cards: shuffledGame.cards,
+        currentTeam: shuffledGame.currentTeam,
+        redRemaining: shuffledGame.redRemaining,
+        blueRemaining: shuffledGame.blueRemaining,
+        winner: null,
+        currentClue: null,
+      });
+      console.log('Game shuffled successfully');
+    } catch (error) {
+      console.error('Error shuffling game:', error);
+    }
+  };
+
+  const handleReset = async () => {
+    if (!game) return;
+    try {
+      const newGame = resetGame(game);
+      await updateGame(gameId, {
+        cards: newGame.cards,
+        currentTeam: newGame.currentTeam,
+        redRemaining: newGame.redRemaining,
+        blueRemaining: newGame.blueRemaining,
+        winner: null,
+        currentClue: null,
+      });
+      console.log('Game reset successfully');
+    } catch (error) {
+      console.error('Error resetting game:', error);
+    }
+  };
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -151,6 +187,15 @@ export default function SpymasterScreen({ route, navigation }: SpymasterScreenPr
             </TouchableOpacity>
           </View>
         )}
+
+        <View style={styles.gameControlsContainer}>
+          <TouchableOpacity style={styles.shuffleButton} onPress={handleShuffle}>
+            <Text style={styles.controlButtonText}>🔀 Shuffle</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.resetButton} onPress={handleReset}>
+            <Text style={styles.controlButtonText}>🔄 Reset</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView contentContainerStyle={styles.boardContainer}>
@@ -272,6 +317,29 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#4CAF50',
     textAlign: 'center',
+  },
+  gameControlsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 15,
+    marginTop: 15,
+  },
+  shuffleButton: {
+    backgroundColor: '#9C27B0',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+  },
+  resetButton: {
+    backgroundColor: '#F44336',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+  },
+  controlButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   boardContainer: {
     padding: 20,
