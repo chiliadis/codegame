@@ -32,14 +32,14 @@ export default function QRScannerScreen({ navigation }: QRScannerScreenProps) {
       gameId = data.split('?join=')[1];
     }
 
-    // Joiners go directly to Board view (they're players, not spymaster)
-    navigation.navigate('Board', { gameId });
+    // Joiners go to Spymaster view (they control the game)
+    navigation.navigate('Spymaster', { gameId });
   };
 
   const handleManualJoin = () => {
     if (manualCode.trim().length > 0) {
-      // Joiners go directly to Board view (they're players, not spymaster)
-      navigation.navigate('Board', { gameId: manualCode.trim().toUpperCase() });
+      // Joiners go to Spymaster view (they control the game)
+      navigation.navigate('Spymaster', { gameId: manualCode.trim().toUpperCase() });
     } else {
       Alert.alert('Error', 'Please enter a game code');
     }

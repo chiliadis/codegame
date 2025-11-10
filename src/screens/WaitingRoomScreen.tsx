@@ -15,8 +15,8 @@ export default function WaitingRoomScreen({ route, navigation }: WaitingRoomScre
   const gameUrl = `https://codegame-8730b.web.app?join=${gameId}`;
 
   const handleContinue = () => {
-    // Creator is always the spymaster
-    navigation.navigate('Spymaster', { gameId });
+    // Creator goes to board view (player view)
+    navigation.navigate('Board', { gameId });
   };
 
   const handleShare = async () => {

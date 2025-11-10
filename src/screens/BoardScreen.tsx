@@ -63,11 +63,12 @@ export default function BoardScreen({ route, navigation }: BoardScreenProps) {
     }
   };
 
-  // Calculate card size to fit 5 cards with proper spacing
+  // Calculate card size to fit 5 cards wide with rectangular shape for 16:9 screens
   const screenWidth = Dimensions.get('window').width;
   const screenHeight = Dimensions.get('window').height;
   const availableWidth = Math.min(screenWidth - 40, 1200); // Max width for large screens
-  const cardSize = (availableWidth - 40) / 5; // 5 cards with gaps
+  const cardWidth = (availableWidth - 48) / 5; // 5 cards with gaps (8px gaps between)
+  const cardHeight = cardWidth * 0.65; // Make rectangular (wider than tall) for 16:9
 
   return (
     <View style={styles.container}>
@@ -127,16 +128,16 @@ export default function BoardScreen({ route, navigation }: BoardScreenProps) {
                 styles.card,
                 getCardStyle(card),
                 {
-                  width: cardSize,
-                  height: cardSize,
+                  width: cardWidth,
+                  height: cardHeight,
                 },
               ]}
             >
-              <Text style={[styles.cardWord, { fontSize: cardSize * 0.15 }]}>{card.word}</Text>
+              <Text style={[styles.cardWord, { fontSize: cardHeight * 0.22 }]}>{card.word}</Text>
 
               {card.revealed && (
                 <View style={styles.overlay}>
-                  <SpyIcon type={card.type} size={cardSize * 0.7} />
+                  <SpyIcon type={card.type} size={cardHeight * 0.85} />
                 </View>
               )}
             </View>

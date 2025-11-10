@@ -30,8 +30,8 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     try {
       const game = await getGame(gameIdToJoin.toUpperCase());
       if (game) {
-        // Joiners go directly to Board view (they're players, not spymaster)
-        navigation.navigate('Board', { gameId: gameIdToJoin.toUpperCase() });
+        // Joiners go to Spymaster view (they control the game)
+        navigation.navigate('Spymaster', { gameId: gameIdToJoin.toUpperCase() });
       } else {
         alert('Game not found.');
       }
@@ -72,8 +72,8 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
       console.log('Joining game:', gameId.toUpperCase());
       const game = await getGame(gameId.toUpperCase());
       if (game) {
-        // Players joining go directly to board view
-        navigation.navigate('Board', { gameId: gameId.toUpperCase() });
+        // Joiners go to Spymaster view (they control the game)
+        navigation.navigate('Spymaster', { gameId: gameId.toUpperCase() });
       } else {
         alert('Game not found. Check the game ID.');
       }
