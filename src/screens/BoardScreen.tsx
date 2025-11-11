@@ -263,10 +263,11 @@ const styles = StyleSheet.create({
   },
   boardContainer: {
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingVertical: 15,
+    paddingTop: 12,
+    paddingBottom: 10,
   },
   board: {
     flexDirection: 'row',
