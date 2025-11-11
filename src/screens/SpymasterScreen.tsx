@@ -59,8 +59,8 @@ export default function SpymasterScreen({ route, navigation }: SpymasterScreenPr
     if (card.revealed) return;
 
     try {
-      // Play sound effect for the card type
-      playCardSound(card.type);
+      // Play sound effect for the card type (pass current team for xios sound)
+      playCardSound(card.type, game.currentTeam);
 
       console.log('Revealing card:', index, card.word, card.type);
       const updatedGame = revealCard(game, index);

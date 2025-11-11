@@ -1,18 +1,33 @@
 import { Platform } from 'react-native';
-import { CardType } from '../types/game';
+import { CardType, TeamColor } from '../types/game';
 
 // Greek TV inspired sound effects using Web Audio API for instant playback
 // These create funny beeps and tones reminiscent of Greek TV game shows
-export async function playCardSound(cardType: CardType) {
+export async function playCardSound(cardType: CardType, currentTeam?: TeamColor) {
   if (Platform.OS === 'web') {
-    playWebSound(cardType);
+    playWebSound(cardType, currentTeam);
   }
   // For native platforms, you would load MP3/WAV files here
 }
 
-function playWebSound(cardType: CardType) {
+function playWebSound(cardType: CardType, currentTeam?: TeamColor) {
   try {
-    console.log('Playing sound for card type:', cardType);
+    console.log('Playing sound for card type:', cardType, 'current team:', currentTeam);
+
+    // Check if it's a wrong answer (opponent's card)
+    const isWrongAnswer = currentTeam &&
+      ((cardType === 'red' && currentTeam === 'blue') ||
+       (cardType === 'blue' && currentTeam === 'red'));
+
+    if (isWrongAnswer) {
+      // Play xios.mp3 for wrong answers
+      console.log('Wrong answer! Playing xios.mp3');
+      const audio = new Audio('/assets/sounds/xios.mp3');
+      audio.volume = 0.5;
+      audio.play().catch(err => console.log('Error playing xios.mp3:', err));
+      return;
+    }
+
     const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
     console.log('AudioContext state:', audioContext.state);
 
@@ -53,13 +68,11 @@ function playWebSound(cardType: CardType) {
         break;
 
       case 'neutral':
-        // "Meh" sound - flat buzzer (like wrong answer on Greek TV)
-        oscillator.type = 'square';
-        oscillator.frequency.setValueAtTime(200, audioContext.currentTime);
-        gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
-        oscillator.start(audioContext.currentTime);
-        oscillator.stop(audioContext.currentTime + 0.3);
+        // Play xios.mp3 for neutral cards too (wrong answer)
+        console.log('Neutral card! Playing xios.mp3');
+        const neutralAudio = new Audio('/assets/sounds/xios.mp3');
+        neutralAudio.volume = 0.5;
+        neutralAudio.play().catch(err => console.log('Error playing xios.mp3:', err));
         break;
 
       case 'assassin':
