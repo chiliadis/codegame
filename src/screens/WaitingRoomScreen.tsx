@@ -15,7 +15,7 @@ export default function WaitingRoomScreen({ route, navigation }: WaitingRoomScre
   const gameUrl = `https://codegame-8730b.web.app?join=${gameId}`;
 
   const handleContinue = () => {
-    // Creator goes to board view (player view)
+    // Creator goes to board view (player/spectator view)
     navigation.navigate('Board', { gameId });
   };
 

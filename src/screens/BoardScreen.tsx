@@ -6,7 +6,12 @@ import { RootStackParamList } from '../navigation/types';
 import { subscribeToGame, updateGame } from '../services/gameService';
 import { Game, Card } from '../types/game';
 import { revealCard } from '../utils/gameLogic';
-import SpyIcon from '../components/SpyIcon';
+import WinAnimation from '../components/WinAnimation';
+import ExplosionAnimation from '../components/ExplosionAnimation';
+import RedAgentIcon from '../components/RedAgentIcon';
+import BlueAgentIcon from '../components/BlueAgentIcon';
+import BombIcon from '../components/BombIcon';
+import NeutralIcon from '../components/NeutralIcon';
 
 type BoardScreenProps = {
   route: RouteProp<RootStackParamList, 'Board'>;
@@ -17,15 +22,62 @@ export default function BoardScreen({ route, navigation }: BoardScreenProps) {
   const { gameId } = route.params;
   const [game, setGame] = useState<Game | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showWinAnimation, setShowWinAnimation] = useState(false);
+  const [showExplosion, setShowExplosion] = useState(false);
+  const [timeRemaining, setTimeRemaining] = useState(240); // 4 minutes in seconds
 
   useEffect(() => {
     const unsubscribe = subscribeToGame(gameId, (gameData) => {
       setGame(gameData);
       setLoading(false);
+
+      // Trigger win animation when a team wins
+      if (gameData?.winner && !showWinAnimation) {
+        setShowWinAnimation(true);
+      }
     });
 
     return unsubscribe;
   }, [gameId]);
+
+  // Reset timer when turn changes
+  useEffect(() => {
+    if (game && !game.winner) {
+      setTimeRemaining(240); // Reset to 4 minutes
+    }
+  }, [game?.currentTeam, game?.winner]);
+
+  // Countdown timer
+  useEffect(() => {
+    if (game?.winner) {
+      return; // Stop timer if game is over
+    }
+
+    const interval = setInterval(() => {
+      setTimeRemaining((prev) => {
+        if (prev <= 0) {
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [game?.winner]);
+
+  useEffect(() => {
+    // Check if assassin was just revealed
+    if (game?.cards) {
+      const assassinRevealed = game.cards.find(
+        card => card.type === 'assassin' && card.revealed
+      );
+      if (assassinRevealed && !showExplosion) {
+        setShowExplosion(true);
+        // Clear explosion after animation completes (1 second)
+        setTimeout(() => setShowExplosion(false), 1200);
+      }
+    }
+  }, [game?.cards]);
 
   // Board view is display-only - no card clicking allowed
   // All game actions are controlled by spymaster
@@ -63,12 +115,56 @@ export default function BoardScreen({ route, navigation }: BoardScreenProps) {
     }
   };
 
-  // Calculate card size to fit 5 cards wide with rectangular shape for 16:9 screens
+  // Format time as MM:SS
+  const formatTime = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  // Determine timer color based on time remaining
+  const getTimerColor = (): string => {
+    if (timeRemaining <= 30) return '#da3633'; // Red when 30 seconds or less
+    if (timeRemaining <= 60) return '#fb8500'; // Orange when 1 minute or less
+    return '#58a6ff'; // Blue otherwise
+  };
+
+  // Calculate card size to fit 5x5 grid in 16:9 aspect ratio for TV
   const screenWidth = Dimensions.get('window').width;
   const screenHeight = Dimensions.get('window').height;
-  const availableWidth = Math.min(screenWidth - 40, 1200); // Max width for large screens
-  const cardWidth = (availableWidth - 48) / 5; // 5 cards with gaps (8px gaps between)
-  const cardHeight = cardWidth * 0.65; // Make rectangular (wider than tall) for 16:9
+
+  // Calculate available space
+  const headerHeight = 175; // Approximate header height
+  const verticalPadding = 16; // boardContainer padding
+  const horizontalPadding = 40; // Container horizontal padding
+  const gap = 8; // Gap between cards
+
+  // Calculate 16:9 viewport dimensions
+  const availableHeight = screenHeight - headerHeight - verticalPadding;
+  const availableWidth = screenWidth - horizontalPadding;
+
+  // Calculate board container size maintaining 16:9 aspect ratio
+  let boardContainerWidth: number;
+  let boardContainerHeight: number;
+
+  // Fit 16:9 container into available space
+  const targetAspectRatio = 16 / 9;
+  const availableAspectRatio = availableWidth / availableHeight;
+
+  if (availableAspectRatio > targetAspectRatio) {
+    // Limited by height
+    boardContainerHeight = availableHeight;
+    boardContainerWidth = boardContainerHeight * targetAspectRatio;
+  } else {
+    // Limited by width
+    boardContainerWidth = availableWidth;
+    boardContainerHeight = boardContainerWidth / targetAspectRatio;
+  }
+
+  // Calculate card dimensions to fit 5x5 grid within the 16:9 container
+  // Use slightly more width to make cards wider (better for reading Greek text)
+  const cardWidth = (boardContainerWidth - (4 * gap)) / 5;
+  const cardHeight = (boardContainerHeight - (4 * gap)) / 5;
 
   return (
     <View style={styles.container}>
@@ -85,12 +181,22 @@ export default function BoardScreen({ route, navigation }: BoardScreenProps) {
         </View>
 
         <View style={styles.statusBar}>
-          {/* Score */}
+          {/* Score and Timer */}
           <View style={styles.scoreContainer}>
             <View style={[styles.scoreBox, styles.redBox]}>
               <Text style={styles.scoreText}>{game.redRemaining}</Text>
               <Text style={styles.scoreLabel}>RED</Text>
             </View>
+
+            {/* Timer */}
+            {!game.winner && (
+              <View style={[styles.timerBox, { borderColor: getTimerColor() }]}>
+                <Text style={[styles.timerText, { color: getTimerColor() }]}>
+                  ⏱️ {formatTime(timeRemaining)}
+                </Text>
+              </View>
+            )}
+
             <View style={[styles.scoreBox, styles.blueBox]}>
               <Text style={styles.scoreText}>{game.blueRemaining}</Text>
               <Text style={styles.scoreLabel}>BLUE</Text>
@@ -121,7 +227,7 @@ export default function BoardScreen({ route, navigation }: BoardScreenProps) {
 
       {/* Board */}
       <View style={styles.boardContainer}>
-        <View style={[styles.board, { width: availableWidth }]}>
+        <View style={[styles.board, { width: cardWidth * 5 + gap * 4 }]}>
           {game.cards.map((card, index) => (
             <View
               key={index}
@@ -134,17 +240,33 @@ export default function BoardScreen({ route, navigation }: BoardScreenProps) {
                 },
               ]}
             >
-              <Text style={[styles.cardWord, { fontSize: cardHeight * 0.22 }]}>{card.word}</Text>
+              <Text
+                style={[styles.cardWord, { fontSize: Math.min(cardHeight * 0.2, cardWidth * 0.12, 24) }]}
+                numberOfLines={3}
+                adjustsFontSizeToFit
+                minimumFontScale={0.5}
+              >
+                {card.word}
+              </Text>
 
               {card.revealed && (
                 <View style={styles.overlay}>
-                  <SpyIcon type={card.type} size={cardHeight * 0.85} />
+                  {card.type === 'red' && <RedAgentIcon size={Math.min(cardHeight * 0.9, cardWidth * 0.7)} />}
+                  {card.type === 'blue' && <BlueAgentIcon size={Math.min(cardHeight * 0.9, cardWidth * 0.7)} />}
+                  {card.type === 'assassin' && <BombIcon size={Math.min(cardHeight * 0.9, cardWidth * 0.7)} />}
+                  {card.type === 'neutral' && <NeutralIcon size={Math.min(cardHeight * 0.9, cardWidth * 0.7)} />}
                 </View>
               )}
             </View>
           ))}
         </View>
       </View>
+
+      {/* Animations */}
+      {showWinAnimation && game.winner && (
+        <WinAnimation teamColor={game.winner} />
+      )}
+      {showExplosion && <ExplosionAnimation />}
     </View>
   );
 }
@@ -225,6 +347,21 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginTop: 2,
   },
+  timerBox: {
+    minWidth: 100,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    borderWidth: 2,
+    backgroundColor: '#21262d',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  timerText: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    fontFamily: 'monospace',
+  },
   turnBadge: {
     paddingVertical: 8,
     paddingHorizontal: 20,
@@ -263,11 +400,11 @@ const styles = StyleSheet.create({
   },
   boardContainer: {
     flex: 1,
-    justifyContent: 'flex-start',
+    justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 10,
+    paddingTop: 8,
+    paddingBottom: 8,
   },
   board: {
     flexDirection: 'row',
@@ -276,10 +413,10 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   card: {
-    borderRadius: 10,
+    borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 12,
+    padding: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
@@ -307,6 +444,8 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textAlign: 'center',
     color: '#000',
+    width: '100%',
+    flexShrink: 1,
   },
   overlay: {
     position: 'absolute',
@@ -314,10 +453,10 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    backgroundColor: 'rgba(0, 0, 0, 0.95)',
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 10,
+    borderRadius: 8,
   },
   overlayIcon: {
     textAlign: 'center',

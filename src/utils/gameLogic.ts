@@ -36,6 +36,7 @@ export function createNewGame(gameId: string): Game {
     redRemaining: startingTeam === 'red' ? 9 : 8,
     blueRemaining: startingTeam === 'blue' ? 9 : 8,
     createdAt: Date.now(),
+    // spymasterId is initially undefined - first joiner becomes spymaster
   };
 }
 
@@ -146,6 +147,6 @@ export function shuffleGame(game: Game): Game {
 }
 
 export function resetGame(game: Game): Game {
-  // Create completely new game with new words
+  // Create completely new game with new words and clear spymaster
   return createNewGame(game.id);
 }

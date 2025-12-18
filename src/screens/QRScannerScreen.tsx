@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, TextInput, Platform, Alert } 
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
 import { CameraView, Camera } from 'expo-camera';
+import { getGame } from '../services/gameService';
 
 type QRScannerScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'QRScanner'>;
@@ -23,7 +24,7 @@ export default function QRScannerScreen({ navigation }: QRScannerScreenProps) {
     }
   }, []);
 
-  const handleBarCodeScanned = ({ data }: { data: string }) => {
+  const handleBarCodeScanned = async ({ data }: { data: string }) => {
     setScanned(true);
 
     // Extract game ID from URL or use directly
@@ -32,14 +33,38 @@ export default function QRScannerScreen({ navigation }: QRScannerScreenProps) {
       gameId = data.split('?join=')[1];
     }
 
-    // Joiners go to Spymaster view (they control the game)
-    navigation.navigate('Spymaster', { gameId });
+    try {
+      const game = await getGame(gameId);
+      if (game) {
+        // Joiners try to become spymaster (SpymasterScreen will handle claiming or redirecting)
+        navigation.navigate('Spymaster', { gameId });
+      } else {
+        Alert.alert('Error', 'Game not found');
+        setScanned(false);
+      }
+    } catch (error) {
+      console.error('Error joining game:', error);
+      Alert.alert('Error', 'Failed to join game');
+      setScanned(false);
+    }
   };
 
-  const handleManualJoin = () => {
+  const handleManualJoin = async () => {
     if (manualCode.trim().length > 0) {
-      // Joiners go to Spymaster view (they control the game)
-      navigation.navigate('Spymaster', { gameId: manualCode.trim().toUpperCase() });
+      const gameId = manualCode.trim().toUpperCase();
+
+      try {
+        const game = await getGame(gameId);
+        if (game) {
+          // Joiners try to become spymaster (SpymasterScreen will handle claiming or redirecting)
+          navigation.navigate('Spymaster', { gameId });
+        } else {
+          Alert.alert('Error', 'Game not found');
+        }
+      } catch (error) {
+        console.error('Error joining game:', error);
+        Alert.alert('Error', 'Failed to join game');
+      }
     } else {
       Alert.alert('Error', 'Please enter a game code');
     }

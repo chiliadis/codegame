@@ -8,6 +8,11 @@ A mobile/web app implementation of the popular Codenames board game, built with 
 - **Board Mode**: Player/TV display with real-time card reveals
 - **Real-time Sync**: All players see updates instantly via Firebase
 - **Game Management**: Create and join games with simple room codes
+- **4-Minute Timer**: Countdown timer for each turn with color-coded warnings
+- **Greek Word Bank**: 600+ Greek words optimized for multiple meanings and creative connections
+- **Word Rotation**: Words don't repeat for 20 games in a session
+- **Custom Icons**: Distinct SVG icons for Red Team, Blue Team, Bomb (Assassin), and Neutral cards
+- **Sound Effects**: Greek TV-inspired sound effects for card reveals and turn changes
 
 ## Setup
 
@@ -110,8 +115,20 @@ codenames-app/
 - **Firebase Firestore** - Real-time database
 - **TypeScript** - Type safety
 
+## Deployment
+
+Deploy to Firebase Hosting:
+
+```bash
+npm run deploy
+```
+
+This will build the web version and deploy to Firebase Hosting.
+
 ## Notes
 
 - Firebase test mode rules expire after 30 days - update security rules for production
 - For production, implement proper authentication
-- Current word bank has 400+ words - can be expanded in `src/utils/words.ts`
+- Current word bank has 600+ Greek words optimized for Codenames gameplay
+- Words are carefully selected for multiple meanings and associations
+- Timer automatically resets to 4 minutes when turns change

@@ -30,7 +30,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     try {
       const game = await getGame(gameIdToJoin.toUpperCase());
       if (game) {
-        // Joiners go to Spymaster view (they control the game)
+        // Joiners try to become spymaster (SpymasterScreen will handle claiming or redirecting)
         navigation.navigate('Spymaster', { gameId: gameIdToJoin.toUpperCase() });
       } else {
         alert('Game not found.');
@@ -43,19 +43,30 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
   };
 
   const handleCreateGame = async () => {
+    console.log('Create Game button pressed');
     setLoading(true);
     try {
       const newGameId = generateGameId();
       console.log('Creating game with ID:', newGameId);
       const game = createNewGame(newGameId);
+      console.log('Game object created:', game);
+
       await createGame(game);
-      console.log('Game created successfully!');
+      console.log('Game created successfully in Firebase!');
 
       // Go to waiting room to show QR code
+      console.log('Navigating to WaitingRoom with gameId:', newGameId);
       navigation.navigate('WaitingRoom', { gameId: newGameId });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating game:', error);
-      alert('Failed to create game. Check Firebase configuration and console for errors.');
+      console.error('Error message:', error?.message);
+      console.error('Error stack:', error?.stack);
+
+      if (Platform.OS === 'web') {
+        alert(`Failed to create game: ${error?.message || 'Unknown error'}\n\nCheck the browser console for details.`);
+      } else {
+        Alert.alert('Error', `Failed to create game: ${error?.message || 'Unknown error'}`);
+      }
     } finally {
       setLoading(false);
     }
@@ -72,7 +83,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
       console.log('Joining game:', gameId.toUpperCase());
       const game = await getGame(gameId.toUpperCase());
       if (game) {
-        // Joiners go to Spymaster view (they control the game)
+        // Joiners try to become spymaster (SpymasterScreen will handle claiming or redirecting)
         navigation.navigate('Spymaster', { gameId: gameId.toUpperCase() });
       } else {
         alert('Game not found. Check the game ID.');
@@ -91,11 +102,13 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
 
       <View style={styles.section}>
         <TouchableOpacity
-          style={[styles.button, styles.createButton]}
+          style={[styles.button, styles.createButton, loading && styles.buttonDisabled]}
           onPress={handleCreateGame}
           disabled={loading}
         >
-          <Text style={styles.buttonText}>Create New Game</Text>
+          <Text style={styles.buttonText}>
+            {loading ? 'Creating...' : 'Create New Game'}
+          </Text>
         </TouchableOpacity>
       </View>
 
@@ -180,6 +193,9 @@ const styles = StyleSheet.create({
     padding: 18,
     borderRadius: 8,
     alignItems: 'center',
+  },
+  buttonDisabled: {
+    opacity: 0.5,
   },
   createButton: {
     backgroundColor: '#4CAF50',

@@ -6,8 +6,14 @@ import { RootStackParamList } from '../navigation/types';
 import { subscribeToGame, updateGame } from '../services/gameService';
 import { Game, Card } from '../types/game';
 import { endTurn, revealCard, shuffleGame, resetGame } from '../utils/gameLogic';
-import SpyIcon from '../components/SpyIcon';
+import WinAnimation from '../components/WinAnimation';
+import ExplosionAnimation from '../components/ExplosionAnimation';
+import RedAgentIcon from '../components/RedAgentIcon';
+import BlueAgentIcon from '../components/BlueAgentIcon';
+import BombIcon from '../components/BombIcon';
+import NeutralIcon from '../components/NeutralIcon';
 import { playCardSound, playEndTurnSound } from '../utils/soundEffects';
+import { getUserId } from '../utils/userManager';
 
 type SpymasterScreenProps = {
   route: RouteProp<RootStackParamList, 'Spymaster'>;
@@ -18,15 +24,77 @@ export default function SpymasterScreen({ route, navigation }: SpymasterScreenPr
   const { gameId } = route.params;
   const [game, setGame] = useState<Game | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showWinAnimation, setShowWinAnimation] = useState(false);
+  const [showExplosion, setShowExplosion] = useState(false);
+  const [isAuthorized, setIsAuthorized] = useState<boolean>(false);
+  const [userId, setUserId] = useState<string>('');
+
+  // Check if user is the spymaster or can claim the role
+  useEffect(() => {
+    const checkAuthorization = async () => {
+      const currentUserId = await getUserId();
+      setUserId(currentUserId);
+    };
+
+    checkAuthorization();
+  }, []);
 
   useEffect(() => {
-    const unsubscribe = subscribeToGame(gameId, (gameData) => {
-      setGame(gameData);
+    const unsubscribe = subscribeToGame(gameId, async (gameData) => {
+      if (gameData && userId) {
+        setGame(gameData);
+
+        // If no spymaster exists, claim the role
+        if (!gameData.spymasterId) {
+          console.log('No spymaster exists. Claiming role for user:', userId);
+          try {
+            await updateGame(gameId, { spymasterId: userId });
+            setIsAuthorized(true);
+            console.log('Successfully claimed spymaster role');
+          } catch (error) {
+            console.error('Error claiming spymaster role:', error);
+            setIsAuthorized(false);
+          }
+        }
+        // If spymaster exists and it's not this user, redirect to Board
+        else if (gameData.spymasterId !== userId) {
+          console.log('Spymaster already exists. Redirecting to Board view.');
+          setIsAuthorized(false);
+          setLoading(false);
+          // Redirect to Board view after a short delay
+          setTimeout(() => {
+            navigation.replace('Board', { gameId });
+          }, 2000);
+        }
+        // If this user is the spymaster, grant access
+        else {
+          setIsAuthorized(true);
+        }
+      }
       setLoading(false);
+
+      // Trigger win animation when a team wins
+      if (gameData?.winner && !showWinAnimation) {
+        setShowWinAnimation(true);
+      }
     });
 
     return unsubscribe;
-  }, [gameId]);
+  }, [gameId, userId]);
+
+  useEffect(() => {
+    // Check if assassin was just revealed
+    if (game?.cards) {
+      const assassinRevealed = game.cards.find(
+        card => card.type === 'assassin' && card.revealed
+      );
+      if (assassinRevealed && !showExplosion) {
+        setShowExplosion(true);
+        // Clear explosion after animation completes (1 second)
+        setTimeout(() => setShowExplosion(false), 1200);
+      }
+    }
+  }, [game?.cards]);
 
   const handleEndTurn = async () => {
     if (!game) return;
@@ -142,6 +210,20 @@ export default function SpymasterScreen({ route, navigation }: SpymasterScreenPr
     );
   }
 
+  if (!isAuthorized && !loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <Text style={styles.errorText}>Spymaster Role Taken</Text>
+        <Text style={styles.errorSubtext}>
+          Another player has already claimed the spymaster role.
+        </Text>
+        <Text style={styles.errorSubtext}>
+          Redirecting to Board view...
+        </Text>
+      </View>
+    );
+  }
+
   const getCardColor = (card: Card) => {
     if (card.type === 'red') return '#E53935';
     if (card.type === 'blue') return '#1E88E5';
@@ -149,11 +231,41 @@ export default function SpymasterScreen({ route, navigation }: SpymasterScreenPr
     return '#BDBDBD';
   };
 
-  // Calculate card size to fit 5 cards wide with rectangular shape for 16:9 screens
+  // Calculate card size to fit 5x5 grid in 16:9 aspect ratio for TV
   const screenWidth = Dimensions.get('window').width;
-  const availableWidth = Math.min(screenWidth - 40, 1200); // Max width for large screens
-  const cardWidth = (availableWidth - 48) / 5; // 5 cards with gaps (8px gaps between)
-  const cardHeight = cardWidth * 0.65; // Make rectangular (wider than tall) for 16:9
+  const screenHeight = Dimensions.get('window').height;
+
+  // Calculate available space
+  const headerHeight = 280; // Approximate header height with controls
+  const verticalPadding = 40; // boardContainer padding
+  const horizontalPadding = 40; // Container horizontal padding
+  const gap = 8; // Gap between cards
+
+  // Calculate 16:9 viewport dimensions
+  const availableHeight = screenHeight - headerHeight - verticalPadding;
+  const availableWidth = screenWidth - horizontalPadding;
+
+  // Calculate board container size maintaining 16:9 aspect ratio
+  let boardContainerWidth: number;
+  let boardContainerHeight: number;
+
+  // Fit 16:9 container into available space
+  const targetAspectRatio = 16 / 9;
+  const availableAspectRatio = availableWidth / availableHeight;
+
+  if (availableAspectRatio > targetAspectRatio) {
+    // Limited by height
+    boardContainerHeight = availableHeight;
+    boardContainerWidth = boardContainerHeight * targetAspectRatio;
+  } else {
+    // Limited by width
+    boardContainerWidth = availableWidth;
+    boardContainerHeight = boardContainerWidth / targetAspectRatio;
+  }
+
+  // Calculate card dimensions to fit 5x5 grid within the 16:9 container
+  const cardWidth = (boardContainerWidth - (4 * gap)) / 5;
+  const cardHeight = (boardContainerHeight - (4 * gap)) / 5;
 
   return (
     <View style={styles.container}>
@@ -206,7 +318,7 @@ export default function SpymasterScreen({ route, navigation }: SpymasterScreenPr
       </View>
 
       <ScrollView contentContainerStyle={styles.boardContainer}>
-        <View style={[styles.board, { width: availableWidth }]}>
+        <View style={[styles.board, { width: boardContainerWidth }]}>
           {game.cards.map((card, index) => (
             <TouchableOpacity
               key={index}
@@ -222,17 +334,33 @@ export default function SpymasterScreen({ route, navigation }: SpymasterScreenPr
               disabled={card.revealed || !!game.winner}
               activeOpacity={0.7}
             >
-              <Text style={[styles.cardWord, { fontSize: cardHeight * 0.22 }]}>{card.word}</Text>
+              <Text
+                style={[styles.cardWord, { fontSize: Math.min(cardHeight * 0.2, cardWidth * 0.12, 24) }]}
+                numberOfLines={3}
+                adjustsFontSizeToFit
+                minimumFontScale={0.5}
+              >
+                {card.word}
+              </Text>
 
               {card.revealed && (
                 <View style={styles.overlay}>
-                  <SpyIcon type={card.type} size={cardHeight * 0.85} />
+                  {card.type === 'red' && <RedAgentIcon size={Math.min(cardHeight * 0.9, cardWidth * 0.7)} />}
+                  {card.type === 'blue' && <BlueAgentIcon size={Math.min(cardHeight * 0.9, cardWidth * 0.7)} />}
+                  {card.type === 'assassin' && <BombIcon size={Math.min(cardHeight * 0.9, cardWidth * 0.7)} />}
+                  {card.type === 'neutral' && <NeutralIcon size={Math.min(cardHeight * 0.9, cardWidth * 0.7)} />}
                 </View>
               )}
             </TouchableOpacity>
           ))}
         </View>
       </ScrollView>
+
+      {/* Animations */}
+      {showWinAnimation && game.winner && (
+        <WinAnimation teamColor={game.winner} />
+      )}
+      {showExplosion && <ExplosionAnimation />}
     </View>
   );
 }
@@ -251,6 +379,13 @@ const styles = StyleSheet.create({
   errorText: {
     color: '#fff',
     fontSize: 18,
+    marginBottom: 10,
+  },
+  errorSubtext: {
+    color: '#ccc',
+    fontSize: 14,
+    textAlign: 'center',
+    marginTop: 5,
   },
   header: {
     padding: 20,
@@ -370,6 +505,8 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
     textAlign: 'center',
+    width: '100%',
+    flexShrink: 1,
   },
   overlay: {
     position: 'absolute',
@@ -377,7 +514,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.95)',
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 12,

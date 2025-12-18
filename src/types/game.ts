@@ -20,6 +20,7 @@ export interface Game {
     team: TeamColor;
   };
   createdAt: number;
+  spymasterId?: string; // Unique ID of the spymaster (first person to join as spymaster)
 }
 
 export interface GameState extends Game {
