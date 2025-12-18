@@ -1,16 +1,20 @@
 import { Platform } from 'react-native';
 import { CardType, TeamColor } from '../types/game';
+import { Asset } from 'expo-asset';
+
+// Load xios sound asset
+const xiosSound = Asset.fromModule(require('../../assets/sounds/xios.mp3'));
 
 // Greek TV inspired sound effects using Web Audio API for instant playback
 // These create funny beeps and tones reminiscent of Greek TV game shows
 export async function playCardSound(cardType: CardType, currentTeam?: TeamColor) {
   if (Platform.OS === 'web') {
-    playWebSound(cardType, currentTeam);
+    await playWebSound(cardType, currentTeam);
   }
   // For native platforms, you would load MP3/WAV files here
 }
 
-function playWebSound(cardType: CardType, currentTeam?: TeamColor) {
+async function playWebSound(cardType: CardType, currentTeam?: TeamColor) {
   try {
     console.log('Playing sound for card type:', cardType, 'current team:', currentTeam);
 
@@ -22,7 +26,8 @@ function playWebSound(cardType: CardType, currentTeam?: TeamColor) {
     if (isWrongAnswer) {
       // Play xios.mp3 for wrong answers
       console.log('Wrong answer! Playing xios.mp3');
-      const audio = new Audio('/assets/sounds/xios.mp3');
+      await xiosSound.downloadAsync();
+      const audio = new Audio(xiosSound.uri);
       audio.volume = 0.5;
       audio.play().catch(err => console.log('Error playing xios.mp3:', err));
       return;
@@ -70,7 +75,8 @@ function playWebSound(cardType: CardType, currentTeam?: TeamColor) {
       case 'neutral':
         // Play xios.mp3 for neutral cards too (wrong answer)
         console.log('Neutral card! Playing xios.mp3');
-        const neutralAudio = new Audio('/assets/sounds/xios.mp3');
+        await xiosSound.downloadAsync();
+        const neutralAudio = new Audio(xiosSound.uri);
         neutralAudio.volume = 0.5;
         neutralAudio.play().catch(err => console.log('Error playing xios.mp3:', err));
         break;
